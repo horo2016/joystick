@@ -5,20 +5,141 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="X-UA-Compatible" content="ie=edge">
   <title>机器车控制</title>
-  <link type="text/css" rel="stylesheet" href="./index.css" />
+ 
+   <style>
+  .front {
+  width: 20px;
+  height: 20px;
+  border: none;
+  background-color: #fff;
+  box-shadow: 0 8px 16px 0 rgba(0,0,0,0.2), 0 6px 20px 0 rgba(0,0,0,0.19);
+  border: 4px solid #aaffff;
+  color: #aaffff;
+}
+
+.back {
+  background-image: url('./j.png');
+  background-size: cover;
+   border: 4px solid #aaffff;
+}
+.box {
+  display: flex;
+  width: 100%;
+  background-color: #999;
+  
+}
+#left {
+  position: absolute;
+  width: 100%;
+  height: 600px;
+  background-color: #282c35;
+}
+      
+</style>
 </head>
 <body>
-  <div style="width:100%;height:80%;border: solid red 1px;font-size:12px;overflow:auto;float:right"
-  class="wrapper wrapper-content animated fadeInRight">
+  <div style="width:100%;height:80%;border: solid red 1px;font-size:12px;overflow:auto;"
+  class="wrapper wrapper-content animated ">
 		  
-    <div id="left">
-        </div>
+    <div id="left"></div>
     </div>
    
   </div>
-  <script src="./node_modules/nipplejs/dist/nipplejs.min.js"></script>
-  <script src="./joystick.js"></script>
-  <script src="./game.js"></script>
-  <script src="./index.js"></script>
+  <script src="nipplejs/dist/nipplejs.min.js"></script>
+ <script>
+ 
+ function Joystick(opt) {
+  if (!opt.zone) return;
+  var disabledColor = opt && opt.disabledColor || true;
+
+  this.options = {
+    mode: opt && opt.mode || 'static',
+    size: opt && opt.size || 300,
+    color: disabledColor ? 'ddd' : (opt && opt.color || '#eee'),
+    position: opt && opt.position || {
+      left: '50%',
+      top: '50%'
+    },
+    zone: opt && opt.zone
+  };
+
+  this.distance = 0;
+  this.x =0;
+  this.y =0;
+  this.angle = null;
+  this.time = null;
+}
+function select(val) {
+  return document.querySelector(val);
+}
+
+  /*  var static = nipplejs.create({
+        zone: document.getElementById('left'),
+        mode: 'static',
+        position: {left: '50%', top: '50%'},
+        color: 'red'
+    });
+	*/
+Joystick.prototype.init = function() {
+  var manager = nipplejs.create(this.options);
+  this.manager = manager;
+  this._on();
+  return this;
+}
+Joystick.prototype._on = function() {
+  var me = this;
+  this.manager
+    .on('start', function (evt, data) {
+	//me.x = data.position.x;
+	//	me.y = data.position.y;
+		console.log(data.position.x,data.position.y);
+      me.time = setInterval(() => {
+        me.onStart && me.onStart(me.distance,me.angle,me.x,me.y);
+      }, 100);
+    })
+    .on('move', function (evt, data) {
+      if (data.direction) 
+	  {
+        me.angle = data.direction.angle;
+        me.distance = data.distance;
+		me.x = data.position.x;
+		me.y = data.position.y;
+      }
+    })
+    .on('end', function (evt, data) {
+	    console.log("end:"+data.position.x,data.position.y);
+      clearInterval(me.time);
+      me.onEnd && me.onEnd();
+    });
+}
+
+
+
+ new Joystick({
+  zone: select('#left')
+})
+.init()
+.onStart = function(distance, angle , x ,y) {
+  // console.log('无人机向 => ' + angle + '移动' + distance + '个单位');
+  console.log("position:",x,y);
+  switch(angle) {
+    case 'up':
+	 
+      break;
+    case 'right':
+     
+      break;
+    case 'left':
+   
+	  break;
+	 case 'down':
+    
+	  break;
+	default:
+   
+	   break;
+  }
+}
+</script>
 </body>
 </html>
