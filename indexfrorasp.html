@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>机器车控制</title>
+ 
+   <style>
+  .front {
+  width: 20px;
+  height: 20px;
+  border: none;
+  background-color: #fff;
+  box-shadow: 0 8px 16px 0 rgba(0,0,0,0.2), 0 6px 20px 0 rgba(0,0,0,0.19);
+  border: 4px solid #aaffff;
+  color: #aaffff;
+}
+
+.back {
+  background-image: url('./j.png');
+  background-size: cover;
+   border: 4px solid #aaffff;
+}
+.box {
+  display: flex;
+  width: 100%;
+  background-color: #999;
+  
+}
+#left {
+  position: absolute;
+  width: 100%;
+  height: 600px;
+  background-color: #282c35;
+}
+      
+</style>
+</head>
+<body>
+  <div style="width:100%;height:80%;border: solid red 1px;font-size:12px;overflow:auto;"
+  class="wrapper wrapper-content animated ">
+		  
+    <div id="left"></div>
+    </div>
+   
+  </div>
+  <script src="mqttws31.js"></script>
+  <script src="./dist/nipplejs.min.js"></script>
+ <script>
+ var hostname = 'www.woyilian.com', //'192.168.1.2',
+	lonti= 116.238982,
+	lati = 40.0933592,
+	devid =111111,
+	port = 8083,
+	clientId = 'client-mao2180',
+	timeout = 5,
+	keepAlive = 50,
+	cleanSession = false,
+	ssl = false,
+	topic = devid +'/state/gps';
+	var isvalid =0;
+	//   topic = '1110000001001001/state/gps';
+	function MQTTconnect(){
+
+	console.log(devid);
+	client = new Paho.MQTT.Client(hostname, Number(port), "clientId");
+	client.onConnectionLost = onConnectionLost;//注册连接断开处理事件
+	client.onMessageArrived = onMessageArrived;//注册消息接收处理事件
+	client.connect({onSuccess:onConnect});//连接服务器并注册连接成功处理事件
+	};
+	function onConnect() {
+	// Once a connection has been made, make a subscription and send a message.
+	console.log("onConnect");
+	client.subscribe(topic);
+	// message = new Paho.MQTT.Message("Hello");
+	//  message.destinationName = "/World";
+	//  client.send(message); 
+	};
+	function onConnectionLost(responseObject) {
+	if (responseObject.errorCode !== 0)
+	console.log("onConnectionLost:"+responseObject.errorMessage);
+	console.log("连接已断开");
+	};     
+	function send(){
+	 console.log("into send message");
+	 //json对象
+	var jsoninf={ "gpsend":"1" ,"endlonti":"Bill" , "endlati":"Gates" };
+	sendtopic = devid +'/download/position';
+		//可以如下修改firstName属性的值
+
+
+	var strs =new Array();
+
+	var s = document.getElementById("end").value;
+	strs = s.split(",");
+	 jsoninf["endlonti"]=strs[0]+'';
+	 jsoninf["endlati"]=strs[1]+'';
+					
+	ss = JSON.stringify(jsoninf);
+	console.log(jsoninf);
+	if(s){
+	   // s = "{time:"+new Date().Format("yyyy-MM-dd hh:mm:ss")+", content:"+(s)+", from: web console}";
+		message = new Paho.MQTT.Message(ss);
+		message.destinationName = sendtopic;
+			client.send(message);
+		   
+	}
+	}
+
+	function onMessageArrived(message) {
+	//  console.log("onMessageArrived:"+message.payloadString);
+	//add parse code 
+	//  var t = message.payloadString;
+	console.log("收到消息:"+message.payloadString);
+	console.log("主题："+message.destinationName);
+	console.log("长度："+strlen(message.payloadString));
+	if(strlen(message.payloadString)>60)
+	{
+	   
+	   var temp1 = jQuery.parseJSON(message.payloadString);
+	  
+
+		console.log("解析出来的：humidity："+temp1.type);
+		console.log("解析出来的：temperature："+temp1.devid); 
+		console.log("解析出来的：lng："+temp1.lonti); 
+		console.log("解析出来的：lati："+temp1.lati);
+		lati = temp1.lati;
+		lonti = temp1.lonti;
+		map.centerAndZoom(new BMap.Point(lonti,lati),15);
+		map1.centerAndZoom(new BMap.Point(lonti, lati), 16);  //初始坐标点设置
+		var loc_gps =  lonti.toString()+','+lati.toString();
+		 $('#start').val(loc_gps);
+		 $('#longti').val(lonti);
+		 $('#latit').val(lati);
+		 isvalid =1;
+	
+	}
+	
+	};
+	function send_x_y(velocity,angle){
+		 console.log("into send message");
+		 //json对象
+		var jsoninf={ "control":"1" ,"vel":"Bill" , "ang":"Gates" };
+		sendtopic = devid +'/download/control';
+			//可以如下修改firstName属性的值
+
+
+		
+		 jsoninf["vel"] = velocity.toFixed(1) +'';
+		 jsoninf["ang"] = angle.toFixed(1) +'';
+						
+		ss = JSON.stringify(jsoninf);
+		console.log(jsoninf);
+		if(ss){
+		   // s = "{time:"+new Date().Format("yyyy-MM-dd hh:mm:ss")+", content:"+(s)+", from: web console}";
+			message = new Paho.MQTT.Message(ss);
+			message.destinationName = sendtopic;
+				client.send(message);
+			   
+		}
+	}
+	// setInterval( " MQTTconnect()", 10000);
+	//计算字符串的长度
+	function strlen(str){
+	var len = 0;
+	for (var i=0; i<str.length; i++) { 
+	var c = str.charCodeAt(i); 
+	//单字节加1 
+	if ((c >= 0x0001 && c <= 0x007e) || (0xff60<=c && c<=0xff9f)) { 
+	len++; 
+	} 
+	else { 
+	len+=2; 
+	} 
+	} 
+	return len;
+	}
+
+ function Joystick(opt) {
+  if (!opt.zone) return;
+  var disabledColor = opt && opt.disabledColor || true;
+//300可以改成160看效果
+  this.options = {
+    mode: opt && opt.mode || 'static',
+    size: opt && opt.size || 300,
+    color: disabledColor ? 'ddd' : (opt && opt.color || '#eee'),
+    position: opt && opt.position || {
+      left: '50%',
+      top: '50%'
+    },
+    zone: opt && opt.zone
+  };
+
+ this.distance = 0;
+this.x =0;
+this.y =0;
+this.start_x =0;
+this.start_y =0;
+this.velocity =0;
+this.angcity =0;
+this.angle = null;
+this.time = null;
+}
+function select(val) {
+  return document.querySelector(val);
+}
+
+  /*  var static = nipplejs.create({
+        zone: document.getElementById('left'),
+        mode: 'static',
+        position: {left: '50%', top: '50%'},
+        color: 'red'
+    });
+	*/
+Joystick.prototype.init = function() {
+  var manager = nipplejs.create(this.options);
+  this.manager = manager;
+  this._on();
+  return this;
+}
+Joystick.prototype._on = function() {
+  var me = this;
+  this.manager
+    .on('start', function (evt, data) {
+	me.start_x = data.position.x;
+	me.start_y = data.position.y;
+      me.time = setInterval(() => {
+        me.onStart && me.onStart(me.distance,me.angle,me.velocity,me.angcity);
+      }, 100);
+    })
+    .on('move', function (evt, data) {
+	   
+	  //console.log("position:"+data.position.x,data.position.y);
+	  //console.log(data.direction.y);
+      if (data.direction) {
+	  	me.angle = data.direction.angle;
+		me.distance = data.distance;
+		me.velocity =  (me.start_y - data.position.y   )/135  ;
+	
+	    me.angcity =   (me.start_x - data.position.x  )/135 ;
+        //me.angle = data.direction.angle;
+       // me.distance = data.distance;
+      }
+    })
+    .on('end', function (evt, data) {
+	send_x_y(0.0,0.0);
+      clearInterval(me.time);
+      me.onEnd && me.onEnd();
+    });
+}
+
+
+
+ new Joystick({
+  zone: select('#left')
+})
+.init()
+.onStart = function(distance, angle, x ,y) {
+  // console.log('无人机向 => ' + angle + '移动' + distance + '个单位');
+  send_x_y(x,y);
+  switch(angle) {
+    case 'up':
+     // Game.jump(distance);
+      break;
+    case 'right':
+     // Game.forward(distance);
+      break;
+    case 'left':
+     // Game.backward(distance);
+	  break;
+	 case 'down':
+     // Game.fall(distance);
+	  break;
+	default:
+     // Game.stop();
+	   break;
+  }
+}
+
+
+MQTTconnect();
+</script>
+</body>
+</html>
